@@ -1,0 +1,113 @@
+Gromacs command
+
+How to open:  tar xvzf CD44Apt1.tgz
+
+Open in terminal by right clicking inside gromacs file in model file
+
+Start gromacs
+
+1. source /usr/local/gromacs/bin/GMXRC
+
+Energy minimization
+
+2. gmx grompp -f step4.0_minimization.mdp -o em.tpr -c step3_input.gro -r step3_input.gro -p topol.top -n index.ndx -maxwarn 2
+
+3. gmx mdrun -v -deffnm em
+
+4. gmx energy -f em.edr -o potential.xvg
+
+5. 12 0
+
+6. xmgrace potential.xvg
+
+Equilibration
+
+7. gmx grompp -f step4.1_equilibration.mdp -o eq.tpr -c em.gro -r step3_input.gro -p topol.top -n index.ndx -maxwarn 2
+
+8. gmx mdrun -v -deffnm eq
+
+9. gmx energy -f eq.edr -o temperature.xvg
+
+10. 16 0
+
+11. xmgrace temperature.xvg
+
+production
+
+edit first (if want to run in 100 ns, 5*seven times zero) in step 5.0 in model file
+
+12. gmx grompp -f step5_production.mdp -o md_100.tpr -c eq.gro -r step3_input.gro -p topol.top -n index.ndx -maxwarn 2
+
+13. gmx mdrun -v -deffmn
+
+
+
+visualization using vmd software (.gro and .xtc)
+
+source /usr/local/gromacs/bin/GMXRC
+
+write this command
+14. gmx trjconv -s md_100.tpr -f md_100.xtc -o md_100_nopbc.xtc -pbc mol -ur compact
+15. select "0"
+16. vmd md_100.gro md_100_nopbc.xtc
+
+FOR VISUALIZATION
+Click graphic--> representations--> write protein to remove water box
+if you want to change the black background to white: click graphics-->colors--> choose display in categories, then background in names, 8 white in colors box.
+to save snapshot of our simulation image
+render snapshot filename.bmp
+find the file in gromacs folder
+
+FOR MOVIE RECORDING
+Click on trajectory and set trajectory smoothening window size to 2
+Go to analysis---- RMSD trajectory tool---- Align
+EXtension--> Visualization-->movie maker
+
+TO CONVERT TO MP4 FILE
+open in your gmx movie file
+17. source /usr/local/gromacs/bin/GMXRC
+18. ffmpeg -i test_1.mpg test_1.mp4 (please replace the test_1.mpg with your folder name)
+
+MMPBSA
+Paste mmpbsa.in from desktop to your GROMACS folder
+Open the terminal
+19. source /usr/local/gromacs/bin/GMXRC
+20. gmx editconf -f md_100.tpr -o protein.pdb
+21. gmx make_ndx -f protein.pdb -o new_index.ndx
+22. 13 | 14 | 15 | 16
+23. q
+
+24. conda activate gmxMMPBSA
+25. source /usr/local/gromacs/bin/GMXR
+
+post process
+26. gmx_MMPBSA -O -i mmpbsa.in -cs md_100.tpr -ci new_index.ndx -cg 1 20 -ct md_100_nopbc.xtc -cp topol.top
+
+RMSD
+27. gmx rms -f md_100_nopbc.xtc -s md_100.tpr -o rmsd.xvg -tu ns
+28. Select a group: 4
+29. xmgrace rmsd.xvg
+
+RMSF
+30. gmx rmsf -s md_100.tpr -f md_100_nopbc.xtc -o rmsf.xvg -res
+31. Select a group: 1
+32. xmgrace rmsf.xvg
+
+Gyration
+33. gmx gyrate -s md_100.tpr -f md_100_nopbc.xtc -o gyrate.xvg
+34. Select a group: 1
+35. xmgrace gyrate.xvg
+ 
+hbond
+36. gmx hbond -f md_100_nopbc.xtc -s md_100.tpr -n new_index.ndx -num hbnum.xvg -tu ns
+37. Select a group: 1
+38. Select a group: 20
+39. xmgrace hbnum.xvg
+
+SASA
+40. gmx sasa -s md_100.tpr -f md_100_nopbc.xtc -o sasa.xvg -tu ns
+41. xmgrace sasa.xvg
+For aptamer
+40. gmx sasa -s md_100.tpr -f md_100_nopbc.xtc -o sasa_apt.xvg -n new_index.ndx -tu ns
+41. 20
+42. xmgrace sasa.xvg
